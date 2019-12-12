@@ -1,0 +1,15 @@
+
+# idea configuration files
+.idea/
+CMakeLists.txt
+clzw
+cmake-build-debug/
+
+# input text files and .sh files for testing
+*.txt
+*.sh
+
+# files from tests project
+tests/cmake-build-debug/
+CMakeLists.txt
+
