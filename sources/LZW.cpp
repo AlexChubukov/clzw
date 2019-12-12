@@ -1,19 +1,11 @@
 #include "../headers/LZW.h"
 #include <vector>
 #include <fstream>
-#include <iostream>
 
-// Количество битов в коде
-#define BITS 31
-// Максимальное значение кода
-//#define MAX_CODE (1 << BITS)
+const unsigned short MAX_CODE = (1<<16)-1;
 
-const unsigned int MAX_CODE = (1<<32)-1;
-//typedef short
-
-std::vector<char> intToBytes(int &param);
-int CharToInt(const char *byte);
-
+std::vector<char> shortToBytes(const unsigned short &param);
+unsigned short CharToShort(const char *byte);
 
 CLZW::LZW::LZW() {}
 
@@ -26,9 +18,8 @@ void CLZW::LZW::compress(const std::string &input_file, const std::string &outpu
     }
 
 
-    // Создаем словарь и инициализируем его таблицей ASCII
-    // уменьшить размер до 128
-    std::unordered_map<std::string, int> dictionary;
+    // Создаем словарь и инициализируем его начальным алфавитом
+    std::unordered_map<std::string, unsigned short> dictionary;
     initialize_dictionary(dictionary);
 
     // создаем файл, в который будет записываться сжатая информация
@@ -39,7 +30,7 @@ void CLZW::LZW::compress(const std::string &input_file, const std::string &outpu
         throw std::runtime_error("Ошибка открытия файла");
     }
 
-    int size = 256;
+    unsigned short size = 256;
     std::string w = "";
     char c = 0;
     while (input.get(c)) {
@@ -52,7 +43,7 @@ void CLZW::LZW::compress(const std::string &input_file, const std::string &outpu
         // Если же такого слова в словаре нет, то выводим предыдущее слово в файл и добавляем новое подслово в словарь
         else
          {
-            for(char &block : intToBytes(dictionary[w])) {
+            for(char &block : shortToBytes(dictionary[w])) {
                 output << block;
             }
             if (size < MAX_CODE) {
@@ -64,12 +55,10 @@ void CLZW::LZW::compress(const std::string &input_file, const std::string &outpu
     input.close();
     // Обрабатываем случай, если файл закончился, но слово еще не выведено в поток вывода
     if (!w.empty()) {
-        for(char &block : intToBytes(dictionary[w])) {
+        for(char &block : shortToBytes(dictionary[w])) {
             output << block;
         }
     }
-
-    //std::cout << "\n!!!" << size << "!!!\n";
 
     input.close();
     output.close();
@@ -90,25 +79,26 @@ void CLZW::LZW::decompress(const std::string &input_file, const std::string &out
         throw std::runtime_error("Ошибка открытия файла");
     }
 
-    // Инициализируем словарь начальным алфавитом
-    std::unordered_map<int, std::string> dictionary;
+    // Создаем словарь и инициализируем его начальным алфавитом
+    std::unordered_map<unsigned short, std::string> dictionary;
     initialize_dictionary(dictionary);
-    int size = 256;
+    unsigned short size = 256;
 
-    char buffer[4];
+    char buffer[2];
     std::string w = "";
-    if (input.read (buffer, 4)) {
-        w = dictionary[CharToInt(buffer)];
+    if (input.read (buffer, 2)) {
+        w = dictionary[CharToShort(buffer)];
         output << w;
     }
 
     std::string result = w;
     std::string entry;
-    while (input.read (buffer, 4)) {
-        int k = CharToInt(buffer);
+    while (input.read (buffer, 2)) {
+        int k = CharToShort(buffer);
         if (dictionary.count(k)) {
             entry = dictionary[k];
         } else {
+            // обработка исключительного случая, когда слова еще нет в словаре
             if (k == size) {
                 entry = w + w[0];
             } else {
@@ -125,33 +115,33 @@ void CLZW::LZW::decompress(const std::string &input_file, const std::string &out
 }
 
 
-void CLZW::LZW::initialize_dictionary(std::unordered_map<std::string, int> &dictionary) {
+void CLZW::LZW::initialize_dictionary(std::unordered_map<std::string, unsigned short> &dictionary) {
     for (std::size_t i = 0; i < 256; ++i) {
         dictionary[std::string(1,i)] = i;
     }
 }
 
-void CLZW::LZW::initialize_dictionary(std::unordered_map<int, std::string> &dictionary) {
+void CLZW::LZW::initialize_dictionary(std::unordered_map<unsigned short, std::string> &dictionary) {
     for (std::size_t i = 0; i < 256; ++i) {
         dictionary[i] = std::string(1, i);
     }
 }
 
 
-int CharToInt(const char *byte) {
-    int integer = 0;
-    for (std::size_t i = 0; i < sizeof(int); ++i) {
+unsigned short CharToShort(const char *byte) {
+    unsigned short integer = 0;
+    for (std::size_t i = 0; i < sizeof(short); ++i) {
         integer = integer << (8);
-        int add = static_cast<unsigned char>(byte[i]);
+        unsigned short add = static_cast<unsigned char>(byte[i]);
         integer = integer + add;
     }
     return integer;
 }
 
-std::vector<char> intToBytes(int &param) {
-    std::vector<char> array_of_byte(4);
-    for (int i = 0; i < 4; ++i) {
-        array_of_byte[3 - i] = (param >> (i * 8));
+std::vector<char> shortToBytes(const unsigned short &param) {
+    std::vector<char> array_of_byte(2);
+    for (int i = 0; i < 2; ++i) {
+        array_of_byte[1 - i] = (param >> (i * 8));
     }
     return array_of_byte;
 }

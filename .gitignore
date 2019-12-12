@@ -9,7 +9,11 @@ cmake-build-debug/
 *.txt
 *.sh
 
+# cmake build directories
+build/
+
 # files from tests project
 tests/cmake-build-debug/
-CMakeLists.txt
+
+!CMakeLists.txt
 

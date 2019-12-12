@@ -11,7 +11,6 @@ int main(int argc, char *argv[]) {
         std::string output_file = argv[2];
         std::string argument = argv[3];
 
-        // Почему нельзя сравниватьт "-c" != argv[3] напрямую?
         if ("-c" != argument && "-d" != argument)
         {
             throw std::runtime_error("Неправильный формат ввода данных\n$ ./clzw <входной файл> <выходной файл> <-c or -d>");
